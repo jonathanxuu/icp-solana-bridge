@@ -1,0 +1,27 @@
+{
+  "canisters": {
+    "icp-bridge-backend": {
+      "candid": "src/icp-bridge-backend/icp-bridge-backend.did",
+      "package": "icp-bridge-backend",
+      "type": "rust"
+    },
+    "icp-bridge-frontend": {
+      "dependencies": [
+        "icp-bridge-backend"
+      ],
+      "source": [
+        "src/icp-bridge-frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "icp-bridge-frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}

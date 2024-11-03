@@ -1,0 +1,30 @@
+type Account = record {
+    owner: principal;
+    subaccount: opt Subaccount;
+};
+
+type Subaccount = blob;
+
+type Memo = blob;
+
+type TransferFromArgs = record {
+    spender_subaccount: opt Subaccount;
+    from: Account;
+    to: Account;
+    amount: nat64;
+    fee: opt nat;
+    memo: opt Memo;
+    created_at_time: opt nat64;
+};
+
+type UserBalance = record {
+    amount: nat64;
+};
+
+service : {
+    deposit_to_pool: (opt Subaccount, nat64, opt Subaccount, opt vec nat8) -> (variant { Ok : nat64; Err : text });
+    get_user_balance: (principal) -> (nat64);
+    get_pool_balance: () -> (nat64);
+    get_canister_id: () -> (text);
+    solana_address: () ->  (variant { Ok : text; Err : text });
+};

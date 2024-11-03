@@ -1,0 +1,29 @@
+[package]
+name = "icp-bridge-backend"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["local"]
+local= []
+dev = []
+prod = []
+
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+candid = "0.10"
+ic-cdk = "0.16"
+ic-cdk-timers = "0.10" # Feel free to remove this dependency if you don't need timers
+ic-cdk-macros = "0.5.2"
+serde = "1.0"
+serde_cbor = "0.11"
+serde_json = "1.0"
+icrc-ledger-types = { git = "https://github.com/dfinity/ic/", rev = "d19fa446ab35780b2c6d8b82ea32d808cca558d5" }
+hex = "0.4.3"
+getrandom = {version="0.2.3", features=["custom"]}
+bs58 = "0.4"

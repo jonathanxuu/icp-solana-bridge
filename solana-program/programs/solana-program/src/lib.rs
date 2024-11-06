@@ -3,8 +3,9 @@ use anchor_spl::token::{transfer, Mint, Token, TokenAccount, Transfer};
 use solana_program::instruction::Instruction;
 use solana_program::sysvar::instructions::{load_instruction_at_checked, ID as IX_ID};
 pub mod utils;
-use crate::utils::hex_to_array;
-declare_id!("5giDaPBDesNJNmkKuDafw7pF49VPHqN3k6o1uhfVKF3N");
+use crate::utils::{hex_to_array, hex_to_array_64};
+
+declare_id!("JAd7tStmfYcnhhc1Sh2CX8n99Hssk4rDVTHwu7KmHQ9S");
 
 const ICPPUB: &str = "6d2bb964c9a0523f2477986ef79bc352139562032f656aee809b1a83d49d512e";
 #[program]
@@ -75,7 +76,7 @@ pub mod vault {
         Ok(())
     }
 
-    pub fn withdraw(ctx: Context<Withdraw>, withdraw_amount: u64, sig: [u8; 64]) -> Result<()> {
+    pub fn withdraw(ctx: Context<Withdraw>, withdraw_amount: u64, sig: String) -> Result<()> {
         let vault_token_balance = &ctx.accounts.vault_token_account.amount;
         if vault_token_balance < &withdraw_amount || withdraw_amount <= 0 {
             return err!(ErrorCode::InvalidWithdrawAmount);
@@ -86,6 +87,7 @@ pub mod vault {
             withdraw_amount,
             &ctx.accounts.owner_token_account.key()
         );
+        msg!("message is {} ", message);
 
         let pub_bytes = hex_to_array(ICPPUB);
 
@@ -94,7 +96,7 @@ pub mod vault {
         }
         let pub_array: [u8; 32] = pub_bytes.try_into().unwrap();
 
-        verify_ed25519(&ctx.accounts.ix_sysvar, pub_array, message.as_bytes().to_vec(), sig)?;
+        verify_ed25519(pub_array, message.as_bytes().to_vec(), hex_to_array_64(&sig))?;
 
         msg!("Withdrawing {} to owner account", withdraw_amount);
 
@@ -278,13 +280,6 @@ pub struct Withdraw<'info> {
 
     // Programs section
     token_program: Program<'info, Token>,
-
-    /// CHECK: The address check is needed because otherwise
-    /// the supplied Sysvar could be anything else.
-    /// The Instruction Sysvar has not been implemented
-    /// in the Anchor framework yet, so this is the safe approach.
-    #[account(address = IX_ID)]
-    pub ix_sysvar: AccountInfo<'info>,
 }
 
 impl<'info> Withdraw<'info> {

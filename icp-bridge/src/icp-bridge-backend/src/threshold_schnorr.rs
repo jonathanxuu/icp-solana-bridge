@@ -98,7 +98,7 @@ async fn schnorr_public_key() -> Result<PublicKeyReply, String> {
 #[update]
 pub(crate) async fn schnorr_sign(message: String) -> Result<SignatureReply, String> {
     let internal_request = ManagementCanisterSignatureRequest {
-        message: hex::decode(message).unwrap(),
+        message: message.as_bytes().to_vec(),
         derivation_path: vec![],
         #[cfg(feature = "local")]
         key_id: SchnorrKeyIds::TestKeyLocalDevelopment.to_key_id(SchnorrAlgorithm::Ed25519),

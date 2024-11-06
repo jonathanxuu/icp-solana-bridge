@@ -1,10 +1,15 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{transfer, Mint, Token, TokenAccount, Transfer};
+use solana_program::instruction::Instruction;
+use solana_program::sysvar::instructions::{load_instruction_at_checked, ID as IX_ID};
+pub mod utils;
+use crate::utils::hex_to_array;
+declare_id!("5giDaPBDesNJNmkKuDafw7pF49VPHqN3k6o1uhfVKF3N");
 
-declare_id!("G1KSZYwRskC6W5TtcyCuS19aGTRKrseMezECh8H7gp1z");
-
+const ICPPUB: &str = "6d2bb964c9a0523f2477986ef79bc352139562032f656aee809b1a83d49d512e";
 #[program]
 pub mod vault {
+    use utils::verify_ed25519;
     use super::*;
 
     pub fn initialize_vault(ctx: Context<InitializeVault>, deposit_amount: u64) -> Result<()> {
@@ -70,12 +75,29 @@ pub mod vault {
         Ok(())
     }
 
-    pub fn withdraw(ctx: Context<Withdraw>, withdraw_amount: u64) -> Result<()> {
+    pub fn withdraw(ctx: Context<Withdraw>, withdraw_amount: u64, sig: [u8; 64]) -> Result<()> {
         let vault_token_balance = &ctx.accounts.vault_token_account.amount;
         if vault_token_balance < &withdraw_amount || withdraw_amount <= 0 {
             return err!(ErrorCode::InvalidWithdrawAmount);
         }
+
+        let message = format!(
+            "{}_{}",
+            withdraw_amount,
+            &ctx.accounts.owner_token_account.key()
+        );
+
+        let pub_bytes = hex_to_array(ICPPUB);
+
+        if pub_bytes.len() != 32 {
+            return err!(ErrorCode::InvalidICPPubKey);
+        }
+        let pub_array: [u8; 32] = pub_bytes.try_into().unwrap();
+
+        verify_ed25519(&ctx.accounts.ix_sysvar, pub_array, message.as_bytes().to_vec(), sig)?;
+
         msg!("Withdrawing {} to owner account", withdraw_amount);
+
         let release_to_owner = Transfer {
             from: ctx.accounts.vault_token_account.to_account_info(),
             to: ctx.accounts.owner_token_account.to_account_info(),
@@ -256,6 +278,13 @@ pub struct Withdraw<'info> {
 
     // Programs section
     token_program: Program<'info, Token>,
+
+    /// CHECK: The address check is needed because otherwise
+    /// the supplied Sysvar could be anything else.
+    /// The Instruction Sysvar has not been implemented
+    /// in the Anchor framework yet, so this is the safe approach.
+    #[account(address = IX_ID)]
+    pub ix_sysvar: AccountInfo<'info>,
 }
 
 impl<'info> Withdraw<'info> {
@@ -274,4 +303,10 @@ pub enum ErrorCode {
 
     #[msg("Withdraw amount must be an amount available in the vault")]
     InvalidWithdrawAmount,
+
+    #[msg("Hex string must represent 32 bytes")]
+    InvalidICPPubKey,
+
+    #[msg("Failed to convert Vec<u8> to array")]
+    FailToConvert,
 }

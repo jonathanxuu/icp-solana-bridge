@@ -27,4 +27,6 @@ service : {
     get_pool_balance: () -> (nat64);
     get_canister_id: () -> (text);
     solana_address: () ->  (variant { Ok : text; Err : text });
+    bridge_to_solana:(nat64, text) -> (variant { Ok : text; Err : text });
+    schnorr_public_key : () -> (variant { Ok: record { public_key_hex: text; }; Err: text });
 };
